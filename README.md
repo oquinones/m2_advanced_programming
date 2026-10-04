@@ -29,7 +29,7 @@
 
 ## Estructura del proyecto
 ```text
-m2_programacion_avanzada_evf/
+m2_advanced_programming/
 ├── api/
 │   ├── __init__.py
 │   └── main.py              # Crea la app, implementa la logiva de negocio con TaskManager y manejadores de errores
@@ -192,7 +192,7 @@ Respuesta `200` con una lista de `TaskResponse`: tareas no completadas cuyo `dea
 ### Formato de los errores
 
 - Errores de validación de entrada: `{"detail": [ ...lista de errores de Pydantic... ]}`
-- Errores de negocio: `{"detail": "mensaje descriptivo"}`, p. ej. `{"detail": "No existe la tarea con id 999"}`
+- Errores de negocio: `{"detail": "mensaje descriptivo"}`, p. ej. `{"detail": "The task with id 990000 does not exist"}`
 
 ## 5. Ejecutar tests
 
