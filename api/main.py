@@ -1,4 +1,10 @@
-"""Main module of the Task Management API"""
+"""
+Script principal de la API de Gestión de Tareas
+
+Este script implementa una API RESTful para la gestión de tareas utilizando FastAPI.
+Proporciona endpoints para crear, obtener, actualizar y listar tareas,
+así como para manejar errores específicos de la aplicación.
+"""
 
 from collections.abc import Iterator
 from datetime import date, datetime, timedelta
@@ -22,8 +28,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 
 APP_TITLE = "Task Management API"
 APP_VERSION = "1.0.0"
-APP_DESCRIPTION = "API para la gestión de tareas."
+APP_DESCRIPTION = "API for Task Management"
 
+# Mark: --- FastAPI setup ---
 app = FastAPI(title=APP_TITLE, description=APP_DESCRIPTION, version=APP_VERSION)
 
 # Mark: --- DB setup ---
@@ -38,7 +45,7 @@ class Base(DeclarativeBase):
 
 
 class TaskDB(Base):
-    """Modelo de la tabla de tareas en la base de datos."""
+    """Database schema for the tasks table in the BBDD."""
 
     __tablename__ = "tasks"
 
@@ -59,24 +66,27 @@ Base.metadata.create_all(bind=engine)
 
 # Mark: --- Pydantic model ---
 class TaskCreate(BaseModel):
-    """Datos de entrada para crear una tarea."""
+    """Input data model for creating a task."""
 
-    task_title: str = Field(..., min_length=1, description="Título de la tarea")
-    task_content: str = Field(..., min_length=1, description="Contenido de la tarea")
-    deadline: date = Field(..., description="Fecha de vencimiento")
+    task_title: str = Field(..., min_length=1, description="Task title")
+    task_content: str = Field(..., min_length=1, description="Task content")
+    deadline: date = Field(..., description="Due date")
     assigned_user: str | None = Field(
-        default=None, min_length=1, description="Usuario asignado a la tarea"
+        default=None, min_length=4, description="User assigned to the task"
     )
 
 
 class TaskUpdate(BaseModel):
-    """Datos de entrada para actualizar una tarea."""
+    """Input data model for updating a task."""
 
-    task_completed: bool = Field(description="Estado de completado")
+    task_completed: bool = Field(description="Task completion status")
+    update_date: datetime = Field(
+        default_factory=datetime.now, description="Update date"
+    )
 
 
 class TaskResponse(BaseModel):
-    """Datos de salida de la API para una tarea."""
+    """Output data model for task responses."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,54 +102,54 @@ class TaskResponse(BaseModel):
 
 # Mark: --- Domain exceptions ---
 class TaskNotFoundError(Exception):
-    """La tarea solicitada no existe."""
+    """The requested task does not exist."""
 
     def __init__(self, task_id: int) -> None:
-        super().__init__(f"No existe la tarea con id {task_id}")
+        super().__init__(f"The task with id {task_id} does not exist")
         self.task_id = task_id
 
 
 class InvalidTaskError(Exception):
-    """Los datos de la tarea no cumplen las reglas de negocio."""
+    """The task data does not comply with the business rules."""
 
 
 # Mark: --- Task Manager Service ---
 class TaskManager:
-    """Encapsula la lógica de negocio y el acceso a datos de las tareas."""
+    """Encapsulates the business logic and data access for tasks."""
 
     MAX_DEADLINE_DAYS = 15
 
     def __init__(self, db: Session) -> None:
         self.__db = db
 
-    # Mark: --- Private methods ---
+    # Mark: --- Local methods ---
     @staticmethod
     def _clean_text(text: str) -> str:
-        """Elimina espacios al inicio/final y reduce los repetidos a uno."""
+        """Remove leading and trailing spaces and reduce repetitions to one."""
         return " ".join(text.split())
 
     def _validate_deadline(self, deadline: date, creation_date: date) -> None:
-        """Comprueba que el deadline esté entre la creación y +15 días."""
+        """Check that the deadline is between the creation date and +15 days."""
         if deadline < creation_date:
             raise InvalidTaskError(
-                "deadline no puede ser anterior a la fecha de creación"
+                "The deadline cannot be earlier than the creation date"
             )
         max_deadline = creation_date + timedelta(days=self.MAX_DEADLINE_DAYS)
         if deadline > max_deadline:
             raise InvalidTaskError(
-                f"La fecha dedeadline no puede superar {self.MAX_DEADLINE_DAYS} días "
-                "desde la fecha de creación"
+                f"The deadline cannot exceed {self.MAX_DEADLINE_DAYS} days "
+                "from the creation date"
             )
 
     # Mark: --- Public methods ---
     def create_task(self, data: TaskCreate) -> TaskDB:
-        """Limpia, valida y guarda una tarea."""
+        """Cleans, validates and saves a task."""
         title = self._clean_text(data.task_title)
         content = self._clean_text(data.task_content)
         if not title:
-            raise InvalidTaskError("El título de la tarea no puede estar vacío")
+            raise InvalidTaskError("The task title cannot be empty")
         if not content:
-            raise InvalidTaskError("El contenido de la tarea no puede estar vacío")
+            raise InvalidTaskError("The task content cannot be empty")
 
         assigned_user = None
         if data.assigned_user is not None:
@@ -163,23 +173,24 @@ class TaskManager:
         return task
 
     def get_task(self, task_id: int) -> TaskDB:
-        """Devuelve la tarea o lanza TaskNotFoundError."""
+        """Returns the task or throws a TaskNotFoundError."""
         task = self.__db.get(TaskDB, task_id)
         if task is None:
             raise TaskNotFoundError(task_id)
         return task
 
     def mark_completed(self, task_id: int) -> TaskDB:
-        """Marca la tarea como completada (idempotente)."""
+        """Marks the task as completed."""
         task = self.get_task(task_id)
         if not task.task_completed:
             task.task_completed = True
+            task.update_date = datetime.now()  # Update the update_date
             self.__db.commit()
             self.__db.refresh(task)
         return task
 
     def get_expired_tasks(self) -> list[TaskDB]:
-        """Tareas no completadas con deadline anterior a hoy, ordenadas por fecha."""
+        """Returns expired tasks."""
         stmt = (
             select(TaskDB)
             .where(TaskDB.task_completed.is_(False), TaskDB.deadline < date.today())
@@ -190,7 +201,7 @@ class TaskManager:
 
 # Mark: --- Dependencies ---
 def get_db() -> Iterator[Session]:
-    """Abre una sesión de base de datos por petición y la cierra al terminar."""
+    """Opens a database session per request and closes it when done."""
     db = SessionLocal()
     try:
         yield db
@@ -199,12 +210,12 @@ def get_db() -> Iterator[Session]:
 
 
 def get_task_manager(db: Annotated[Session, Depends(get_db)]) -> TaskManager:
-    """Proporciona el servicio de tareas a los endpoints."""
+    """Provides the task service to the endpoints."""
     return TaskManager(db)
 
 
 TaskManagerDep = Annotated[TaskManager, Depends(get_task_manager)]
-TaskIdPath = Annotated[int, Path(gt=0, description="Id de la tarea")]
+TaskIdPath = Annotated[int, Path(gt=0, description="Id of the task")]
 
 
 # Mark: --- Error handlers ---
@@ -212,7 +223,7 @@ TaskIdPath = Annotated[int, Path(gt=0, description="Id de la tarea")]
 async def validation_error_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """Devuelve 400 en lugar de 422 cuando los datos de entrada no son válidos."""
+    """Returns 400 instead of 422 when the input data is invalid."""
     del request
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -222,7 +233,7 @@ async def validation_error_handler(
 
 @app.exception_handler(InvalidTaskError)
 async def invalid_task_handler(request: Request, exc: InvalidTaskError) -> JSONResponse:
-    """Traduce InvalidTaskError a 400."""
+    """Returns 400 when the task data is invalid."""
     del request
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)}
@@ -233,7 +244,7 @@ async def invalid_task_handler(request: Request, exc: InvalidTaskError) -> JSONR
 async def task_not_found_handler(
     request: Request, exc: TaskNotFoundError
 ) -> JSONResponse:
-    """Traduce TaskNotFoundError a 404."""
+    """Returns 404 when the task is not found."""
     del request
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
@@ -243,7 +254,7 @@ async def task_not_found_handler(
 # Mark: --- Endpoints implementation ---
 @app.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def crear_tarea(task: TaskCreate, manager: TaskManagerDep) -> TaskDB:
-    """Crea una nueva tarea."""
+    """Creates a new task."""
     return manager.create_task(task)
 
 
@@ -251,23 +262,23 @@ def crear_tarea(task: TaskCreate, manager: TaskManagerDep) -> TaskDB:
 # si no, FastAPI intentaría interpretar "caducadas" como un id
 @app.get("/tasks/caducadas", response_model=list[TaskResponse])
 def obtener_tareas_caducadas(manager: TaskManagerDep) -> list[TaskDB]:
-    """Lista las tareas caducadas."""
+    """Returns expired tasks."""
     return manager.get_expired_tasks()
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
 def obtener_tarea(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
-    """Obtiene una tarea por su id."""
+    """Returns a task by its id."""
     return manager.get_task(task_id)
 
 
 @app.put("/tasks/{task_id}/completar", response_model=TaskResponse)
 def marcar_completada(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
-    """Marca una tarea como completada."""
+    """Marks a task as completed."""
     return manager.mark_completed(task_id)
 
 
 @app.get("/")
 def root() -> dict[str, str]:
-    """Endpoint raíz de la API."""
+    """Root endpoint of the API."""
     return {"message": "Task Management API"}
