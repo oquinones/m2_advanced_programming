@@ -1,7 +1,6 @@
 # Task Management API
 
-API REST para la gestión de tareas desarrollada con **FastAPI**.
-El proyecto aplica los principios de programación orientada a objetos (encapsulamiento, abstracción) y sigue las convenciones de estilo **PEP 8**.
+> API REST para la gestión de tareas desarrollada con **FastAPI**. El proyecto aplica los principios de programación orientada a objetos (encapsulamiento, abstracción) y sigue las convenciones de estilo **PEP 8**.
 
 ---
 
@@ -39,7 +38,7 @@ m2_programacion_avanzada_evf/
 └── README.md
 ```
 
-## Modelo de datos
+## Modelo de Datos
 
 ### Registro de tareas (`TaskResponse`)
 
@@ -132,7 +131,7 @@ uvicorn api.main:app --reload
 
 La API estará disponible en `http://localhost:8000`
 
-## Uso de los endpoints
+## 4. Uso de los endpoints
 
 ### `GET /` — Información de la API
 
@@ -195,7 +194,7 @@ Respuesta `200` con una lista de `TaskResponse`: tareas no completadas cuyo `dea
 - Errores de validación de entrada: `{"detail": [ ...lista de errores de Pydantic... ]}`
 - Errores de negocio: `{"detail": "mensaje descriptivo"}`, p. ej. `{"detail": "No existe la tarea con id 999"}`
 
-## Ejecutar tests
+## 5. Ejecutar tests
 
 Con la aplicación arrancada en `http://localhost:8000`, en otra terminal:
 
