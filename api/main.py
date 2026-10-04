@@ -29,6 +29,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 APP_TITLE = "Task Management API"
 APP_VERSION = "1.0.0"
 APP_DESCRIPTION = "API for Task Management"
+# LOCAL_TIMEZONE = ZoneInfo("Europe/Madrid")
 
 # Mark: --- FastAPI setup ---
 app = FastAPI(title=APP_TITLE, description=APP_DESCRIPTION, version=APP_VERSION)
@@ -54,7 +55,9 @@ class TaskDB(Base):
     task_content: Mapped[str] = mapped_column(String(300), nullable=False)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     update_date: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now, onupdate=datetime.now
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
     )
     deadline: Mapped[date] = mapped_column(Date, nullable=False)
     task_completed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -129,12 +132,17 @@ class TaskManager:
         return " ".join(text.split())
 
     def _validate_deadline(self, deadline: date, creation_date: date) -> None:
-        """Check that the deadline is between the creation date and +15 days."""
+        """Check that the deadline is a date between the creation date and +15 days."""
+
+        if not isinstance(deadline, date) or isinstance(deadline, datetime):
+            raise InvalidTaskError("The deadline must be a date (YYYY-MM-DD)")
+
         if deadline < creation_date:
             raise InvalidTaskError(
                 "The deadline cannot be earlier than the creation date"
             )
         max_deadline = creation_date + timedelta(days=self.MAX_DEADLINE_DAYS)
+
         if deadline > max_deadline:
             raise InvalidTaskError(
                 f"The deadline cannot exceed {self.MAX_DEADLINE_DAYS} days "
@@ -183,8 +191,9 @@ class TaskManager:
         """Marks the task as completed."""
         task = self.get_task(task_id)
         if not task.task_completed:
+            now = datetime.now()
             task.task_completed = True
-            task.update_date = datetime.now()  # Update the update_date
+            task.update_date = now
             self.__db.commit()
             self.__db.refresh(task)
         return task
