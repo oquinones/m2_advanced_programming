@@ -66,6 +66,13 @@ def test_marcar_completada() -> None:
     assert response.status_code == 404, response.text
 
 
+def test_obtener_tarea_inexistente() -> None:
+    """Obtaining a non-existing task returns 404."""
+    response = requests.get(f"{TASKS_URL}/999999999", timeout=TIMEOUT)
+    assert response.status_code == 404, response.text
+    assert "task not found" in response.json()["detail"]
+
+
 def test_obtener_tareas_caducadas() -> None:
     """Obtaining expired tasks returns 200; they are not completed, expire before today,
     and are ordered.
@@ -143,6 +150,7 @@ if __name__ == "__main__":
         test_marcar_completada,
         test_obtener_tareas_caducadas,
         test_datos_incorrectos,
+        test_obtener_tarea_inexistente,
     ]
     failed = 0
     for test in tests:
