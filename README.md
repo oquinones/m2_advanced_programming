@@ -192,7 +192,7 @@ Respuesta `200` con una lista de `TaskResponse`: tareas no completadas cuyo `dea
 ### Formato de los errores
 
 - Errores de validación de entrada: `{"detail": [ ...lista de errores de Pydantic... ]}`
-- Errores de negocio: `{"detail": "mensaje descriptivo"}`, p. ej. `{"detail": "The task with id 990000 does not exist"}`
+- Errores de negocio: `{"detail": "Error: Not Found"}`, p. ej. `{"detail": "The task with id 990000 does not exist"}`
 
 ## 5. Ejecutar tests
 
