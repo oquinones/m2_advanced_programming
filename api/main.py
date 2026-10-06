@@ -203,6 +203,12 @@ class TaskManager:
             self.__db.refresh(task)
         return task
 
+    def delete_task(self, task_id: int) -> None:
+        """Deletes the task or raises a TaskNotFoundError."""
+        task = self.get_task(task_id)
+        self.__db.delete(task)
+        self.__db.commit()
+
     def get_expired_tasks(self) -> list[TaskDB]:
         """Returns expired tasks."""
         stmt = (
@@ -290,6 +296,12 @@ def get_task(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
 def mark_completed(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
     """Marks a task as completed."""
     return manager.mark_completed(task_id)
+
+
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task(task_id: TaskIdPath, manager: TaskManagerDep) -> None:
+    """Deletes a task by its id."""
+    manager.delete_task(task_id)
 
 
 @app.get("/")
