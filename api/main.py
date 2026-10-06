@@ -51,7 +51,7 @@ class TaskDB(Base):
     __tablename__ = "tasks"
 
     task_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    task_title: Mapped[str] = mapped_column(String(150), nullable=False)
+    task_title: Mapped[str] = mapped_column(String(100), nullable=False)
     task_content: Mapped[str] = mapped_column(String(300), nullable=False)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     update_date: Mapped[datetime] = mapped_column(
@@ -71,11 +71,16 @@ Base.metadata.create_all(bind=engine)
 class TaskCreate(BaseModel):
     """Input data model for creating a task."""
 
-    task_title: str = Field(..., min_length=1, description="Task title")
-    task_content: str = Field(..., min_length=1, description="Task content")
+    task_title: str = Field(..., min_length=1, description="Task title", max_length=100)
+    task_content: str = Field(
+        ..., min_length=1, description="Task content", max_length=300
+    )
     deadline: date = Field(..., description="Due date")
     assigned_user: str | None = Field(
-        default=None, min_length=4, description="User assigned to the task"
+        default=None,
+        min_length=4,
+        description="User assigned to the task",
+        max_length=100,
     )
 
 
