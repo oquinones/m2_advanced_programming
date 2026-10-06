@@ -1,9 +1,10 @@
 """
-Script principal de la API de Gestión de Tareas
+Main Script for the Task Management API
 
-Este script implementa una API RESTful para la gestión de tareas utilizando FastAPI.
-Proporciona endpoints para crear, obtener, actualizar y listar tareas,
-así como para manejar errores específicos de la aplicación.
+This script implements a RESTful API for task management using FastAPI.
+
+It provides endpoints for creating, retrieving, updating, and listing tasks,
+as well as for handling application-specific errors.
 """
 
 from collections.abc import Iterator
@@ -29,7 +30,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 APP_TITLE = "Task Management API"
 APP_VERSION = "1.0.0"
 APP_DESCRIPTION = "API for Task Management"
-# LOCAL_TIMEZONE = ZoneInfo("Europe/Madrid")
 
 # Mark: --- FastAPI setup ---
 app = FastAPI(title=APP_TITLE, description=APP_DESCRIPTION, version=APP_VERSION)
