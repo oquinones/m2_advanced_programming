@@ -71,6 +71,22 @@ def test_mark_as_completed() -> None:
     assert response.status_code == 404, response.text
 
 
+def test_delete_task() -> None:
+    """Deleting a task returns 204 and the task no longer exists; again returns 404."""
+    task_id = _crear_tarea().json()["task_id"]
+    url = f"{TASKS_URL}/{task_id}"
+
+    response = requests.delete(url, timeout=TIMEOUT)
+    assert response.status_code == 204, response.text
+    assert response.content == b""
+
+    response = requests.get(url, timeout=TIMEOUT)
+    assert response.status_code == 404, response.text
+
+    response = requests.delete(url, timeout=TIMEOUT)
+    assert response.status_code == 404, response.text
+
+
 def test_get_nonexistent_task() -> None:
     """Obtaining a non-existing task returns 404."""
     response = requests.get(f"{TASKS_URL}/990000", timeout=TIMEOUT)
@@ -151,6 +167,10 @@ def test_invalid_data() -> None:
     response = requests.put(f"{TASKS_URL}/abc/completar", timeout=TIMEOUT)
     assert response.status_code == 400, f"PUT non-numeric ID: {response.text}"
 
+    for url in (f"{TASKS_URL}/abc", f"{TASKS_URL}/0"):
+        response = requests.delete(url, timeout=TIMEOUT)
+        assert response.status_code == 400, f"DELETE {url}: {response.text}"
+
 
 if __name__ == "__main__":
     print("\033[1;34mRunning tests...\033[0m")
@@ -158,6 +178,7 @@ if __name__ == "__main__":
         test_create_task,
         test_get_task,
         test_mark_as_completed,
+        test_delete_task,
         test_get_nonexistent_task,
         test_invalid_data,
     ]
