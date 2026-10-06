@@ -134,7 +134,7 @@ ipython_config.py
 __pypackages__/
 
 # PEP 8
-ruff.toml
+# ruff.toml
 
 # Celery stuff
 celerybeat-schedule*
