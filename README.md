@@ -9,10 +9,11 @@
 - Crear una nueva tarea.
 - Obtener una tarea por su `id`.
 - Marcar una tarea como completada.
+- Eliminar una tarea por su `id`.
 - Listar las tareas caducadas (fecha de vencimiento anterior a hoy y no completadas).
 - Persistencia en base de datos **SQLite** mediante **SQLAlchemy**.
 - Lógica de negocio encapsulada en una clase de servicio (`TaskManager`).
-- Gestión de errores con códigos HTTP apropiados (`200`, `201`, `400`, `404`).
+- Gestión de errores con códigos HTTP apropiados (`200`, `201`, `204`, `400`, `404`).
 - Script de pruebas independiente con la librería **requests**.
 
 ## Stack Tecnologico
@@ -71,6 +72,7 @@ m2_advanced_programming/
 | `POST` | `/tasks/` | Crear una nueva tarea | 201 | 400 |
 | `GET` | `/tasks/{task_id}` | Obtener una tarea por su id | 200 | 400, 404 |
 | `PUT` | `/tasks/{task_id}/completar` | Marcar una tarea como completada | 200 | 400, 404 |
+| `DELETE` | `/tasks/{task_id}` | Eliminar una tarea por su id | 204 | 400, 404 |
 | `GET` | `/tasks/caducadas` | Listar las tareas caducadas | 200 | — |
 
 ---
@@ -92,6 +94,7 @@ La aplicación separa responsabilidades en capas:
    | `create_task(data)` | Limpia, valida y guarda una tarea |
    | `get_task(task_id)` | Devuelve la tarea o lanza `TaskNotFoundError` |
    | `mark_completed(task_id)` | Marca la tarea como completada (idempotente) |
+   | `delete_task(task_id)` | Elimina la tarea o lanza `TaskNotFoundError` |
    | `get_expired_tasks()` | Tareas no completadas con `deadline` anterior a hoy, ordenadas por fecha |
 
    Los endpoints no acceden directamente a la base de datos: delegan en `TaskManager`, que oculta los detalles de implementación (**encapsulamiento**) y expone una interfaz sencilla de operaciones (**abstracción**). Los errores de negocio se lanzan como excepciones de dominio (`TaskNotFoundError`, `InvalidTaskError`) que los manejadores de errores de `api/main.py` traducen a `404` y `400`. Los datos de entrada que no superan la validación de Pydantic también devuelven `400` (en lugar del `422` por defecto de FastAPI).
@@ -181,6 +184,13 @@ Respuesta `200` con la tarea (`TaskResponse`).
 ### `PUT /tasks/{task_id}/completar` — Marcar una tarea como completada
 
 No requiere cuerpo. Respuesta `200` con la tarea y `task_completed: true`. Es idempotente: completar una tarea ya completada devuelve `200` sin modificarla.
+
+- `400`: `task_id` no es un entero mayor que 0.
+- `404`: la tarea no existe.
+
+### `DELETE /tasks/{task_id}` — Eliminar una tarea
+
+No requiere cuerpo. Respuesta `204 No Content` (sin cuerpo) si la tarea se ha eliminado. Eliminarla de nuevo devuelve `404`.
 
 - `400`: `task_id` no es un entero mayor que 0.
 - `404`: la tarea no existe.
