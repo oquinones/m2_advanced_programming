@@ -262,7 +262,7 @@ async def task_not_found_handler(
 
 # Mark: --- Endpoints implementation ---
 @app.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def crear_tarea(task: TaskCreate, manager: TaskManagerDep) -> TaskDB:
+def post_create_task(task: TaskCreate, manager: TaskManagerDep) -> TaskDB:
     """Creates a new task."""
     return manager.create_task(task)
 
@@ -270,19 +270,19 @@ def crear_tarea(task: TaskCreate, manager: TaskManagerDep) -> TaskDB:
 # /tasks/caducadas tiene que declararse antes que /tasks/{task_id};
 # si no, FastAPI intentaría interpretar "caducadas" como un id
 @app.get("/tasks/caducadas", response_model=list[TaskResponse])
-def obtener_tareas_caducadas(manager: TaskManagerDep) -> list[TaskDB]:
+def get_expired_tasks(manager: TaskManagerDep) -> list[TaskDB]:
     """Returns expired tasks."""
     return manager.get_expired_tasks()
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
-def obtener_tarea(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
+def get_task(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
     """Returns a task by its id."""
     return manager.get_task(task_id)
 
 
 @app.put("/tasks/{task_id}/completar", response_model=TaskResponse)
-def marcar_completada(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
+def mark_completed(task_id: TaskIdPath, manager: TaskManagerDep) -> TaskDB:
     """Marks a task as completed."""
     return manager.mark_completed(task_id)
 
